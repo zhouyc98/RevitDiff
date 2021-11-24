@@ -61,6 +61,7 @@
                 <ComboBoxItem Content="Quick hash-code-accelerated Comparison-first"/>
             </ComboBox>
             <Button Name="btnStart" Margin="20,0,3,0" MinWidth="120" MinHeight="25" Click="btnStart_Click">Detect Change</Button>
+            <Button Name="btnExport" Margin="20,0,3,0" MinWidth="100" MinHeight="25" Click="btnExport_Click">Export Result</Button>
             <!--<Button Name="btnTest"  Margin="20,0,3,0" MinWidth="40" MinHeight="25" Click="btnTest_Click">TEST</Button>-->
         </StackPanel>
 

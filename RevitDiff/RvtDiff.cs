@@ -44,7 +44,7 @@ namespace RvtDiff
         }
 
         //return the execution time
-        public double CompareRvtDoc(string path1, string path2)
+        public double diffRvtDoc(string path1, string path2)
         {
             //if (!(path1.EndsWith(".rvt") && path2.EndsWith(".rvt")))
             //{ MessageBox.Show("Need \".rvt\" file"); return; }
@@ -1069,7 +1069,7 @@ namespace RvtDiff
                 foreach (int i in ii)
                 {
                     MW.cbAlgorithm.SelectedIndex = i;
-                    CompareRvtDoc(path, filePath);
+                    diffRvtDoc(path, filePath);
                     msg1 += "\t" + _getMeaningfulChangedEIdCount();
                 }
                 msgs.Add(msg1);
@@ -1102,7 +1102,7 @@ namespace RvtDiff
                 foreach (int i in ii)
                 {
                     MW.cbAlgorithm.SelectedIndex = i;
-                    CompareRvtDoc(filePaths[0], filePaths[1]);
+                    diffRvtDoc(filePaths[0], filePaths[1]);
                     msg1 += "\t" + _getMeaningfulChangedEIdCount();
                 }
                 msgs.Add(msg1);

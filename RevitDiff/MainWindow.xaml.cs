@@ -5,7 +5,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Linq;
 using System.IO;
-using System;
+using System.Text;
+using System.Windows.Forms;
 
 namespace RvtDiff
 {
@@ -14,16 +15,16 @@ namespace RvtDiff
     /// </summary>
     public partial class MainWindow : Window
     {
-        public MainWindow(RvtDiff rdc)
+        public MainWindow(RvtDiff rd)
         {
             InitializeComponent();
-            this.rdc = rdc;
+            this.rd = rd;
             trVAllVM = new TreeViewlVM();
             DataContext = trVAllVM;
             btnApply.IsEnabled = false;
             cbAlgorithm.SelectedIndex = 3;
         }
-        public RvtDiff rdc;
+        public RvtDiff rd;
         public TreeViewlVM trVAllVM;
         public bool isMatchingFirst { get { return cbAlgorithm.SelectedIndex == 0; } }
 
@@ -32,9 +33,9 @@ namespace RvtDiff
             if (oldPath == "")
                 oldPath = currPath;
 
-            int indM = oldPath.LastIndexOf('\\') + 1, n;
-            if (oldPath[indM] == 'M' && int.TryParse(oldPath[indM + 1] + "", out n))
-                oldPath = oldPath.Substring(0, indM + 1) + n.ToString() + ".rvt";
+            //int indM = oldPath.LastIndexOf('\\') + 1, n;
+            //if (oldPath[indM] == 'M' && int.TryParse(oldPath[indM + 1] + "", out n))
+            //    oldPath = oldPath.Substring(0, indM + 1) + n.ToString() + ".rvt";
 
             textBox1.Text = oldPath;
             textBox2.Text = currPath;
@@ -64,8 +65,33 @@ namespace RvtDiff
             string path1 = textBox1.Text.Trim();
             string path2 = textBox2.Text.Trim();
 
-            rdc.CompareRvtDoc(path1, path2);
+            rd.diffRvtDoc(path1, path2);
             btnApply.IsEnabled = true;
+        }
+
+        private void btnExport_Click(object sender, RoutedEventArgs e)
+        {
+            if (lVAll.Items.Count <= 1)
+            { System.Windows.MessageBox.Show("No result to export, please detect change first."); return; }
+
+            SaveFileDialog sfd = new SaveFileDialog();
+            sfd.Filter = "CSV文件（*.csv）|*.csv";
+            sfd.FilterIndex = 1;
+            sfd.RestoreDirectory = true;
+            if (sfd.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+                return;
+            string filePath = sfd.FileName; //获得文件路径
+
+            StreamWriter sw = new StreamWriter(filePath, false, Encoding.UTF8);
+            sw.Write("ChangeType, ElementId, Category, Name\r\n");
+            foreach (LvElement lvi in lVAll.Items)
+            {
+                string changeType = lvi.ChangeType;
+                changeType = changeType == "*" ? "Modified" : (changeType == "+" ? "Added" : (changeType == "-" ? "Deleted" : "Unchanged"));
+                sw.Write(changeType + ", " + lvi.EId + ", " + lvi.Category + ", " + lvi.Name + "\r\n");
+            }
+            sw.Flush();
+            sw.Close();
         }
 
         private void btnTest_Click(object sender, RoutedEventArgs e)
@@ -85,15 +111,15 @@ namespace RvtDiff
                 for (int i = 0; i < 4; i++)
                 {
                     cbAlgorithm.SelectedIndex = i;
-                    costTimes[i].Add(rdc.CompareRvtDoc(folderPath + Mx + ".rvt", file.FullName));
+                    costTimes[i].Add(rd.diffRvtDoc(folderPath + Mx + ".rvt", file.FullName));
                 }
 
             List<double> avgCostTimes = new List<double>();
             for (int i = 0; i < 4; i++)
                 avgCostTimes.Add(costTimes[i].Average());
 
-            Clipboard.SetDataObject(string.Join("\t", avgCostTimes));
-            MessageBox.Show(string.Join(",", avgCostTimes));
+            System.Windows.Clipboard.SetDataObject(string.Join("\t", avgCostTimes));
+            System.Windows.MessageBox.Show(string.Join(",", avgCostTimes));
         }
 
         private void lvAll_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -111,12 +137,12 @@ namespace RvtDiff
             else if (lvE.ChangeType == "-")
                 tbAll.Text = "[Deleted Element]";
 
-            tbAll.Text += "\n" + rdc.getEIdInfo(lvE.EId, lvE.ChangeType, true, "\n");
+            tbAll.Text += "\n" + rd.getEIdInfo(lvE.EId, lvE.ChangeType, true, "\n");
         }
 
         private void btnApply_Click(object sender, RoutedEventArgs e)
         {
-            rdc.refreshLVByTrV();
+            rd.refreshLVByTrV();
             setTrVAllAbstract();
         }
 
@@ -130,7 +156,7 @@ namespace RvtDiff
             foreach (LvElement lve in lvEs)
                 eIds.Add(lve.EId);
 
-            rdc.highlightEle(eIds);
+            rd.highlightEle(eIds);
         }
 
         //In the left bottom of the window
