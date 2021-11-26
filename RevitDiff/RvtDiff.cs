@@ -94,8 +94,8 @@ namespace RvtDiff
             collector1.WherePasses(new LogicalOrFilter(new ElementIsElementTypeFilter(true), new ElementIsElementTypeFilter(true)));
             collector2.WherePasses(new LogicalOrFilter(new ElementIsElementTypeFilter(true), new ElementIsElementTypeFilter(true)));
 
-            Eles1 = collector1.OrderBy(e => e.Id.IntegerValue).ToList();
-            Eles2 = collector2.OrderBy(e => e.Id.IntegerValue).ToList();
+            Eles1 = collector1.Where(e => !(e is ElementType) && e.Category != null && e.LevelId != null && e.get_Geometry(new Options()) != null).OrderBy(e => e.Id.IntegerValue).ToList();
+            Eles2 = collector2.Where(e => !(e is ElementType) && e.Category != null && e.LevelId != null && e.get_Geometry(new Options()) != null).OrderBy(e => e.Id.IntegerValue).ToList();
             //Eles2 = collector2.OrderBy(e => Math.Pow(e.Id.IntegerValue, 2) % 100).ToList(); //random cases, need disable acceleration
             //Eles2 = collector2.OrderByDescending(e => e.Id.IntegerValue).ToList();
 
@@ -735,7 +735,14 @@ namespace RvtDiff
             if (loc1.GetType() == typeof(LocationCurve))
             {
                 Curve c1 = (loc1 as LocationCurve).Curve;
-                return 100 * Math.Round(c1.Length, 6) + 10 * getXYZHashCode(c1.GetEndPoint(0)) + getXYZHashCode(c1.GetEndPoint(1));
+                try
+                {
+                    return 10 * getXYZHashCode(c1.GetEndPoint(0)) + getXYZHashCode(c1.GetEndPoint(1)) + 100 * Math.Round(c1.Length, 6);
+                }
+                catch (Autodesk.Revit.Exceptions.ArgumentException) //The input curve is not bound.
+                {
+                    return 100 * Math.Round(c1.Length, 6) + 7;
+                }
             }
             else if (loc1.GetType() == typeof(LocationPoint))
             {
@@ -906,8 +913,14 @@ namespace RvtDiff
             {
                 Curve c1 = (e1.Location as LocationCurve).Curve;
                 Curve c2 = (e2.Location as LocationCurve).Curve;
-                return (Math.Round(c1.Length, 6) == Math.Round(c2.Length, 6) && xyzEqual(c1.GetEndPoint(0), c2.GetEndPoint(0))
-                    && xyzEqual(c1.GetEndPoint(1), c2.GetEndPoint(1)));
+                try
+                {
+                    return xyzEqual(c1.GetEndPoint(0), c2.GetEndPoint(0)) && xyzEqual(c1.GetEndPoint(1), c2.GetEndPoint(1)) && Math.Round(c1.Length, 6) == Math.Round(c2.Length, 6);
+                }
+                catch (Autodesk.Revit.Exceptions.ArgumentException) //The input curve is not bound.
+                {
+                    return Math.Round(c1.Length, 6) == Math.Round(c2.Length, 6);
+                }
             }
 
             else if (e1.Location.GetType() == typeof(LocationPoint))
@@ -961,7 +974,14 @@ namespace RvtDiff
             if (e1.Location.GetType() == typeof(LocationCurve))
             {
                 Curve c1 = (e1.Location as LocationCurve).Curve;
-                return "{起点=" + c1.GetEndPoint(0).ToString() + "，终点=" + c1.GetEndPoint(1).ToString() + "，长度=" + c1.Length + "}";
+                try
+                {
+                    return "{起点=" + c1.GetEndPoint(0).ToString() + "，终点=" + c1.GetEndPoint(1).ToString() + "，长度=" + c1.Length + "}";
+                }
+                catch (Autodesk.Revit.Exceptions.ArgumentException) //The input curve is not bound
+                {
+                    return "{Curve not bound，长度=" + c1.Length + "}";
+                }
                 //getXYZStr()
             }
 
